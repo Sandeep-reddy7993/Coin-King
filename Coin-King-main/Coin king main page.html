@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coin King</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+  <style>
+    body {
+      background-color: #121212;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .wallet {
+      position: fixed;
+      top: 0px;
+      left: 0px;
+      background: #FFD700;
+      color: #000;
+      font-weight: bold;
+      padding: 10px 10px;
+      border-radius: 20px;
+      box-shadow: 0 0 10px #FFD700;
+      font-size: 14px;
+      z-index: 1000;
+      transition: 0.3s ease;
+      height: 55px;
+    }
+    .wallet.win { background: #00c897; color: #fff; }
+    .wallet.lose { background: #ff4444; color: #fff; }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding-top: 30px;
+      flex-direction: column;
+    }
+    .game-box {
+      background: #1f1f1f;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px #000;
+      text-align: center;
+      width: 360px;
+    }
+    .coin {
+      width: 120px;
+      height: 120px;
+      margin: 20px auto;
+      perspective: 1000px;
+    }
+
+    .coin-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+
+    .spin {
+      animation: rotateCoin 5s linear;
+    }
+
+    @keyframes rotateCoin {
+      from { transform: rotateY(0deg); }
+      to { transform: rotateY(7200deg); }
+    }
+
+    .side {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 24px;
+      background: linear-gradient(45deg, #FFD700, #FFA500);
+      box-shadow: 0 0 12px #FFD700;
+      color: #000;
+    }
+
+    .king { transform: rotateY(0deg); }
+    .queen { transform: rotateY(180deg); }
+
+    .controls {
+      margin-top: 20px;
+    }
+
+    .bet-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .bet-controls button {
+      padding: 10px;
+      width: 40px;
+      font-size: 20px;
+      font-weight: bold;
+      background: #FFD700;
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      margin: 0 8px;
+      cursor: pointer;
+    }
+
+    #bet {
+      background: #fff;
+      color: #000;
+      font-size: 18px;
+      font-weight: bold;
+      width: 100px;
+      text-align: center;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .side-btn {
+      background-color: #333;
+      color: #fff;
+      cursor: pointer;
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 8px;
+    }
+
+    .side-btn.selected {
+      background-color: #FFD700;
+      color: #000;
+    }
+
+    .start-btn {
+      background-color: #00c897;
+      color: #fff;
+      width: 200px;
+      cursor: pointer;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    #result {
+      margin-top: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #FFD700;
+      display: none;
+    }
+
+    #cooldown {
+      margin-top: 10px;
+      color: #FF6347;
+      font-weight: bold;
+    }
+
+    .history {
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    .history ul {
+      padding-left: 20px;
+      list-style: none;
+    }
+
+    .history li.win { color: #00ff99; }
+    .history li.lose { color: #ff6666; }
+
+    .section { 
+      /* display: none; */
+      padding: 20px; 
+      width: 100%;
+    }
+    .section-container {
+       font-size:15px;
+       background-color: #151515;
+       padding: 20px;
+       border-radius: 8px;
+       box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); }
+
+    table 
+    {
+       /* width: 100%; */
+       border-collapse: collapse; 
+       /* margin-top: 15px; */
+       }
+    th, td { 
+      border: 1px solid #ccc; 
+      /* padding: 10px; */
+       text-align:left; 
+      }
+
+    th  {
+       background-color:rgb(45, 37, 37);
+       }
+
+  </style>
+</head>
+<body>
+
+ <!-- nav-section -->
+<nav class="navbar navbar-dark bg-dark fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">
+  <div class="wallet" id="wallet">Wallet: ₹500<br><small>(Winning: ₹0 | Remaining: ₹500)</small></div></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="offcanvasDarkNavbar" aria-labelledby="offcanvasDarkNavbarLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title  " id="offcanvasDarkNavbarLabel">Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+              <!-- Sections -->
+          <li class="nav-item w-100">
+              <details>
+                 <summary class="nav-link">profile details</summary>
+                   <div class="section" id="profileDetailsSection">
+                    <div class="section-container">
+                       
+                      <p><strong>Username:</strong> john_doe</p>
+                      <p><strong>Phone:</strong> +1234567890</p>
+                      <p><strong>Email:</strong> john_doe@example.com</p>
+                    </div>
+                  </div>
+            </details>
+          </li>
+
+           <li class="nav-item w-100">
+                <details>
+                  <summary class="nav-link">Add Balance</summary>
+                      <div class="section" id="addBalanceSection">
+                        <div class="section-container">
+                          <h3>Add Balance</h3>
+                          <strong>Current Wallet Balance: ₹<span id="walletBalanceAdd">1000</span></strong>
+                          <div id="addBalanceSuccessMessage">Balance added successfully!</div>
+                          <div id="popupMessageAddBalance">Your amount will be added to your wallet within 10 to 30 minutes.</div>
+                          <form id="addBalanceForm">
+                            <label>Amount:</label>
+                            <input type="number" id="addAmount" required>
+                            <label>Upload Screenshot (.jpg):</label>
+                            <input type="file" id="screenshotUpload" accept=".jpg,.jpeg" required>
+                            <button type="submit">Add</button>
+                          </form>
+                          <div id="qrCodeContainer">
+                            <p>Scan this QR to pay:</p>
+                            <img src="https://via.placeholder.com/150x150.png?text=QR+Code" alt="QR Code" />
+                          </div>
+                        </div>
+                      </div>
+                </details>
+              </li>
+
+          <li class="nav-item">
+             <details>
+                  <summary class="nav-link">Withdraw</summary>
+                   <div class="section" id="withdrawSection">
+                        <div class="section-container">
+                          <h3>Withdraw</h3>
+                          <strong>Current Wallet Balance: ₹<span id="walletBalanceWithdraw">1000</span></strong><br>
+                          <strong>Winning Balance: ₹<span id="winningBalance">1000</span></strong>
+                          <div id="withdrawSuccessMessage">Withdrawal request submitted successfully.</div>
+                          <form id="withdrawForm">
+                            <label>Account Holder Name:</label>
+                            <input type="text" id="accountHolder" maxlength="36" required>
+                            <label>Account Number:</label>
+                            <input type="text" id="accountNumber" pattern="^\d{9,18}$" required>
+                            <label>IFSC Code:</label>
+                            <input type="text" id="ifscCode" pattern="^[A-Za-z]{4}\d{7}$" required>
+                            <label>Amount:</label>
+                            <input type="number" id="withdrawAmount" min="100" required>
+                            <button type="submit">Withdraw</button>
+                          </form>
+                        </div>
+                      </div>
+                </details>
+          </li>
+            <li class="nav-item">
+             <details>
+                  <summary class="nav-link">Transaction History</summary>
+                     <div class="section" id="transactionHistorySection">
+                        <div class="section-container">
+                          <h3>Transaction History</h3>
+                          <input type="text" id="searchInput" onkeyup="searchTransactions()" placeholder="Search...">
+                          <table id="transactionTable">
+                            <thead>
+                              <tr>
+                                <th>Transaction ID</th>
+                              <td>00000</td>
+                            </tr>
+                                <tr>
+                                  <th>Type</th>
+                                  <td>00000</td>
+                                </tr>
+                                <tr>
+                                  <th>Amount</th>
+                                  <td>00000</td>
+                                </tr>
+                                <tr>
+                                  <th>Balance</th>
+                                  <td>00000</td>
+                                </tr>
+                                <tr>
+                                  <th>Status</th>
+                              <td>00000</td>
+                                </tr>
+                                <tr>
+                                  <th>Action</th>
+                                   <td>00000</td>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionTableBody"></tbody>
+                          </table>
+                        </div>
+                      </div>
+                </details>
+          </li>
+          <li class="nav-item">
+            <button>Logout</button>
+          </li>
+        
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div id="popupMessageWithdraw"><strong>Withdrawals will be processed within 10 minutes to 24 hours.</strong></div>
+
+ <!-- game section -->
+  <div class="container">
+    <div class="game-box">
+      <h1>🪙 COIN KING</h1>
+      <div class="coin">
+        <div class="coin-inner" id="coinInner">
+          <div class="side king">KING</div>
+          <div class="side queen">QUEEN</div>
+        </div>
+      </div>
+
+      <div id="result">Result: </div>
+
+      <div class="controls">
+        <div class="bet-controls">
+          <button onclick="changeBet(-10)">−</button>
+          <input type="text" id="bet" value="100" />
+          <button onclick="changeBet(10)">+</button>
+        </div>
+        <div>
+          <button class="side-btn" id="btnKing" onclick="selectSide('KING')">KING</button>
+          <button class="side-btn" id="btnQueen" onclick="selectSide('QUEEN')">QUEEN</button>
+        </div>
+        <button class="start-btn" onclick="flipCoin()" id="startButton">START</button>
+        <div id="cooldown"></div>
+      </div>
+
+      <div class="history">
+        <h3>History</h3>
+        <ul id="historyList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedSide = null;
+    let flipping = false;
+    let totalBalance = 500;
+    let winningBalance = 0;
+    let remainingBalance = 500;
+    let cooldownSeconds = 30;
+    let cooldownTimer = null;
+
+    function updateWalletDisplay(extra = '', cssClass = '') {
+      const wallet = document.getElementById('wallet');
+      wallet.className = 'wallet ' + cssClass;
+      wallet.innerHTML = `${extra ? extra + ' → ' : ''}Wallet: ₹${totalBalance}
+        <br><small>(Winning: ₹${winningBalance} | Remaining: ₹${remainingBalance})</small>`;
+
+      if (extra) {
+        setTimeout(() => {
+          wallet.className = 'wallet';
+          wallet.innerHTML = `Wallet: ₹${totalBalance}
+            <br><small>(Winning: ₹${winningBalance} | Remaining: ₹${remainingBalance})</small>`;
+        }, 2000);
+      }
+    }
+
+    function selectSide(side) {
+      selectedSide = side;
+      document.getElementById('btnKing').classList.toggle('selected', side === 'KING');
+      document.getElementById('btnQueen').classList.toggle('selected', side === 'QUEEN');
+    }
+
+    function changeBet(amount) {
+      const betInput = document.getElementById('bet');
+      let current = parseInt(betInput.value) || 10;
+      current += amount;
+      current = Math.max(10, Math.min(totalBalance, current));
+      betInput.value = current;
+    }
+
+    document.getElementById('bet').addEventListener('blur', () => {
+      let val = parseInt(document.getElementById('bet').value) || 10;
+      val = Math.max(10, Math.min(totalBalance, val));
+      document.getElementById('bet').value = val;
+    });
+
+    function flipCoin() {
+      if (flipping || !selectedSide) return;
+
+      let bet = parseInt(document.getElementById('bet').value);
+      if (isNaN(bet) || bet < 10) {
+        alert('Please enter a valid bet (minimum ₹10).');
+        return;
+      }
+
+      if (bet > totalBalance) {
+        alert('Your bet exceeds the available balance.');
+        return;
+      }
+
+      flipping = true;
+      document.getElementById('result').style.display = 'none';
+
+      const coin = document.getElementById('coinInner');
+      coin.classList.remove('spin');
+      coin.style.transform = '';
+      void coin.offsetWidth;
+      coin.classList.add('spin');
+
+      const outcome = Math.random() < 0.5 ? 'KING' : 'QUEEN';
+
+      setTimeout(() => {
+        coin.classList.remove('spin');
+        coin.style.transform = outcome === 'KING' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+
+        const win = selectedSide === outcome;
+        document.getElementById('result').textContent = `Result: ${outcome}`;
+        document.getElementById('result').style.display = 'block';
+
+        if (win) {
+          totalBalance += bet;
+          winningBalance += bet;
+          updateWalletDisplay(`+₹${bet}`, 'win');
+        } else {
+          if (winningBalance >= bet) {
+            winningBalance -= bet;
+          } else {
+            let remainder = bet - winningBalance;
+            winningBalance = 0;
+            remainingBalance -= remainder;
+          }
+          totalBalance -= bet;
+          updateWalletDisplay(`−₹${bet}`, 'lose');
+        }
+
+        const li = document.createElement('li');
+        li.className = win ? 'win' : 'lose';
+        const sideSymbol = selectedSide === 'KING' ? '👑' : '👸';
+        const outcomeSymbol = outcome === 'KING' ? '👑' : '👸';
+        li.textContent = `You chose ${sideSymbol}, result: ${outcomeSymbol} — ${win ? 'Won' : 'Lost'} (Wallet: ₹${totalBalance})`;
+        document.getElementById('historyList').prepend(li);
+
+        startCooldown();
+      }, 5000);
+    }
+
+    function startCooldown() {
+      const cooldownDisplay = document.getElementById('cooldown');
+      const startButton = document.getElementById('startButton');
+      let remaining = cooldownSeconds;
+
+      startButton.disabled = true;
+      cooldownDisplay.textContent = `Next flip in: ${remaining}s`;
+
+      cooldownTimer = setInterval(() => {
+        remaining--;
+        cooldownDisplay.textContent = `Next flip in: ${remaining}s`;
+
+        if (remaining <= 0) {
+          clearInterval(cooldownTimer);
+          cooldownDisplay.textContent = '';
+          startButton.disabled = false;
+          flipping = false;
+        }
+      }, 1000);
+    }
+
+    updateWalletDisplay();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+</body>
+</html>

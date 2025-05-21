@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Coin King - Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eaeaea;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 350px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="email"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    input[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    input[type="submit"]:hover {
+      background: #0056b3;
+    }
+
+    .extra-buttons {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .extra-buttons a {
+      display: inline-block;
+      margin: 5px 10px;
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+    }
+
+    .extra-buttons a:hover {
+      text-decoration: underline;
+    }
+
+    .error {
+      color: red;
+      font-size: 14px;
+      display: none;
+      margin-top: -8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Form -->
+  <div class="container" id="loginContainer">
+    <h2>Coin King Login</h2>
+    <form id="loginForm" onsubmit="return validateLogin()">
+      <input type="text" id="loginId" name="loginId" placeholder="Phone or Username" required>
+      <input type="password" id="password" name="password" placeholder="Password" required>
+      <div id="passwordError" class="error">Password must include 1 capital letter, 1 number, 1 special character (@), and be 8+ characters.</div>
+      <input type="submit" value="Login">
+    </form>
+
+    <div class="extra-buttons">
+      <a href="#" onclick="showForgotPassword()">Forgot Password?</a> |
+      <a href="#" onclick="showSignup()">Sign Up</a>
+    </div>
+  </div>
+
+  <!-- Hidden Sign-Up Form -->
+  <div class="container" id="signupForm" style="display:none;">
+    <h2>Sign Up</h2>
+    <form onsubmit="return validateSignup()">
+      <input type="text" id="signupUsername" placeholder="Username" required>
+      <input type="text" id="signupPhone" placeholder="Phone Number" required>
+      <input type="email" id="signupEmail" placeholder="Email" required>
+      <input type="password" id="signupPassword" placeholder="Password" required>
+      <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+      <div id="signupError" class="error">Password must include 1 capital letter, 1 number, 1 special character (@), and be 8+ characters.</div>
+      <div id="confirmError" class="error">Passwords do not match.</div>
+      <input type="submit" value="Sign Up">
+    </form>
+    <div class="extra-buttons">
+      <a href="#" onclick="showLogin()">Back to Login</a>
+    </div>
+  </div>
+
+  <!-- Hidden Forgot Password Form -->
+  <div class="container" id="forgotForm" style="display:none;">
+    <h2>Forgot Password</h2>
+    <form>
+      <input type="text" placeholder="Email or Phone" required>
+      <input type="submit" value="Send Reset Link">
+    </form>
+    <div class="extra-buttons">
+      <a href="#" onclick="showLogin()">Back to Login</a>
+    </div>
+  </div>
+
+  <script>
+    // Login Validation
+    function validateLogin() {
+      const password = document.getElementById('password').value;
+      const errorBox = document.getElementById('passwordError');
+      const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).{8,}$/;
+      if (!regex.test(password)) {
+        errorBox.style.display = 'block';
+        return false;
+      }
+      errorBox.style.display = 'none';
+      return true;
+    }
+
+    // Sign-Up Validation
+    function validateSignup() {
+      const phone = document.getElementById('signupPhone').value;
+      const password = document.getElementById('signupPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const error = document.getElementById('signupError');
+      const confirmError = document.getElementById('confirmError');
+      const phoneRegex = /^[0-9]{10}$/;
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).{8,}$/;
+
+      let valid = true;
+
+      if (!phoneRegex.test(phone)) {
+        alert("Phone number must be a 10-digit number.");
+        valid = false;
+      }
+
+      if (!passwordRegex.test(password)) {
+        error.style.display = 'block';
+        valid = false;
+      } else {
+        error.style.display = 'none';
+      }
+
+      if (password !== confirmPassword) {
+        confirmError.style.display = 'block';
+        valid = false;
+      } else {
+        confirmError.style.display = 'none';
+      }
+
+      if (valid) {
+        // Save user data in localStorage (for demonstration)
+        const userData = {
+          username: document.getElementById('signupUsername').value,
+          phone: phone,
+          email: document.getElementById('signupEmail').value,
+          password: password,
+        };
+        localStorage.setItem('userData', JSON.stringify(userData)); // Store user data
+        
+        alert("Signup successful! You can now log in.");
+        showLogin(); // Switch to login form
+      }
+
+      return valid;
+    }
+
+    // Show Sign-Up Form
+    function showSignup() {
+      document.getElementById('loginContainer').style.display = 'none';
+      document.getElementById('signupForm').style.display = 'block';
+      document.getElementById('forgotForm').style.display = 'none';
+    }
+
+    // Show Forgot Password Form
+    function showForgotPassword() {
+      document.getElementById('loginContainer').style.display = 'none';
+      document.getElementById('signupForm').style.display = 'none';
+      document.getElementById('forgotForm').style.display = 'block';
+    }
+
+    // Show Login Form
+    function showLogin() {
+      document.getElementById('loginContainer').style.display = 'block';
+      document.getElementById('signupForm').style.display = 'none';
+      document.getElementById('forgotForm').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
+
+
+
+
