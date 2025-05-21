@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coin King</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .wallet {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #FFD700;
+      color: #000;
+      font-weight: bold;
+      padding: 10px 15px;
+      border-radius: 20px;
+      box-shadow: 0 0 10px #FFD700;
+      font-size: 14px;
+      z-index: 1000;
+      transition: 0.3s ease;
+    }
+
+    .wallet.win { background: #00c897; color: #fff; }
+    .wallet.lose { background: #ff4444; color: #fff; }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding-top: 30px;
+      flex-direction: column;
+    }
+
+    .game-box {
+      background: #1f1f1f;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px #000;
+      text-align: center;
+      width: 360px;
+    }
+
+    .coin {
+      width: 120px;
+      height: 120px;
+      margin: 20px auto;
+      perspective: 1000px;
+    }
+
+    .coin-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+
+    .spin {
+      animation: rotateCoin 5s linear;
+    }
+
+    @keyframes rotateCoin {
+      from { transform: rotateY(0deg); }
+      to { transform: rotateY(7200deg); }
+    }
+
+    .side {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 24px;
+      background: linear-gradient(45deg, #FFD700, #FFA500);
+      box-shadow: 0 0 12px #FFD700;
+      color: #000;
+    }
+
+    .king { transform: rotateY(0deg); }
+    .queen { transform: rotateY(180deg); }
+
+    .controls {
+      margin-top: 20px;
+    }
+
+    .bet-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .bet-controls button {
+      padding: 10px;
+      width: 40px;
+      font-size: 20px;
+      font-weight: bold;
+      background: #FFD700;
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      margin: 0 8px;
+      cursor: pointer;
+    }
+
+    #bet {
+      background: #fff;
+      color: #000;
+      font-size: 18px;
+      font-weight: bold;
+      width: 100px;
+      text-align: center;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .side-btn {
+      background-color: #333;
+      color: #fff;
+      cursor: pointer;
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 8px;
+    }
+
+    .side-btn.selected {
+      background-color: #FFD700;
+      color: #000;
+    }
+
+    .start-btn {
+      background-color: #00c897;
+      color: #fff;
+      width: 200px;
+      cursor: pointer;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    #result {
+      margin-top: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #FFD700;
+      display: none;
+    }
+
+    #cooldown {
+      margin-top: 10px;
+      color: #FF6347;
+      font-weight: bold;
+    }
+
+    .history {
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    .history ul {
+      padding-left: 20px;
+      list-style: none;
+    }
+
+    .history li.win { color: #00ff99; }
+    .history li.lose { color: #ff6666; }
+  </style>
+</head>
+<body>
+  <div class="wallet" id="wallet">Wallet: ₹500<br><small>(Winning: ₹0 | Remaining: ₹500)</small></div>
+
+  <div class="container">
+    <div class="game-box">
+      <h1>🪙 COIN KING</h1>
+      <div class="coin">
+        <div class="coin-inner" id="coinInner">
+          <div class="side king">KING</div>
+          <div class="side queen">QUEEN</div>
+        </div>
+      </div>
+
+      <div id="result">Result: </div>
+
+      <div class="controls">
+        <div class="bet-controls">
+          <button onclick="changeBet(-10)">−</button>
+          <input type="text" id="bet" value="100" />
+          <button onclick="changeBet(10)">+</button>
+        </div>
+        <div>
+          <button class="side-btn" id="btnKing" onclick="selectSide('KING')">KING</button>
+          <button class="side-btn" id="btnQueen" onclick="selectSide('QUEEN')">QUEEN</button>
+        </div>
+        <button class="start-btn" onclick="flipCoin()" id="startButton">START</button>
+        <div id="cooldown"></div>
+      </div>
+
+      <div class="history">
+        <h3>History</h3>
+        <ul id="historyList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedSide = null;
+    let flipping = false;
+    let totalBalance = 500;
+    let winningBalance = 0;
+    let remainingBalance = 500;
+    let cooldownSeconds = 30;
+    let cooldownTimer = null;
+
+    function updateWalletDisplay(extra = '', cssClass = '') {
+      const wallet = document.getElementById('wallet');
+      wallet.className = 'wallet ' + cssClass;
+      wallet.innerHTML = `${extra ? extra + ' → ' : ''}Wallet: ₹${totalBalance}
+        <br><small>(Winning: ₹${winningBalance} | Remaining: ₹${remainingBalance})</small>`;
+
+      if (extra) {
+        setTimeout(() => {
+          wallet.className = 'wallet';
+          wallet.innerHTML = `Wallet: ₹${totalBalance}
+            <br><small>(Winning: ₹${winningBalance} | Remaining: ₹${remainingBalance})</small>`;
+        }, 2000);
+      }
+    }
+
+    function selectSide(side) {
+      selectedSide = side;
+      document.getElementById('btnKing').classList.toggle('selected', side === 'KING');
+      document.getElementById('btnQueen').classList.toggle('selected', side === 'QUEEN');
+    }
+
+    function changeBet(amount) {
+      const betInput = document.getElementById('bet');
+      let current = parseInt(betInput.value) || 10;
+      current += amount;
+      current = Math.max(10, Math.min(totalBalance, current));
+      betInput.value = current;
+    }
+
+    document.getElementById('bet').addEventListener('blur', () => {
+      let val = parseInt(document.getElementById('bet').value) || 10;
+      val = Math.max(10, Math.min(totalBalance, val));
+      document.getElementById('bet').value = val;
+    });
+
+    function flipCoin() {
+      if (flipping || !selectedSide) return;
+
+      let bet = parseInt(document.getElementById('bet').value);
+      if (isNaN(bet) || bet < 10) {
+        alert('Please enter a valid bet (minimum ₹10).');
+        return;
+      }
+
+      if (bet > totalBalance) {
+        alert('Your bet exceeds the available balance.');
+        return;
+      }
+
+      flipping = true;
+      document.getElementById('result').style.display = 'none';
+
+      const coin = document.getElementById('coinInner');
+      coin.classList.remove('spin');
+      coin.style.transform = '';
+      void coin.offsetWidth;
+      coin.classList.add('spin');
+
+      const outcome = Math.random() < 0.5 ? 'KING' : 'QUEEN';
+
+      setTimeout(() => {
+        coin.classList.remove('spin');
+        coin.style.transform = outcome === 'KING' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+
+        const win = selectedSide === outcome;
+        document.getElementById('result').textContent = `Result: ${outcome}`;
+        document.getElementById('result').style.display = 'block';
+
+        if (win) {
+          totalBalance += bet;
+          winningBalance += bet;
+          updateWalletDisplay(`+₹${bet}`, 'win');
+        } else {
+          if (winningBalance >= bet) {
+            winningBalance -= bet;
+          } else {
+            let remainder = bet - winningBalance;
+            winningBalance = 0;
+            remainingBalance -= remainder;
+          }
+          totalBalance -= bet;
+          updateWalletDisplay(`−₹${bet}`, 'lose');
+        }
+
+        const li = document.createElement('li');
+        li.className = win ? 'win' : 'lose';
+        const sideSymbol = selectedSide === 'KING' ? '👑' : '👸';
+        const outcomeSymbol = outcome === 'KING' ? '👑' : '👸';
+        li.textContent = `You chose ${sideSymbol}, result: ${outcomeSymbol} — ${win ? 'Won' : 'Lost'} (Wallet: ₹${totalBalance})`;
+        document.getElementById('historyList').prepend(li);
+
+        startCooldown();
+      }, 5000);
+    }
+
+    function startCooldown() {
+      const cooldownDisplay = document.getElementById('cooldown');
+      const startButton = document.getElementById('startButton');
+      let remaining = cooldownSeconds;
+
+      startButton.disabled = true;
+      cooldownDisplay.textContent = `Next flip in: ${remaining}s`;
+
+      cooldownTimer = setInterval(() => {
+        remaining--;
+        cooldownDisplay.textContent = `Next flip in: ${remaining}s`;
+
+        if (remaining <= 0) {
+          clearInterval(cooldownTimer);
+          cooldownDisplay.textContent = '';
+          startButton.disabled = false;
+          flipping = false;
+        }
+      }, 1000);
+    }
+
+    updateWalletDisplay();
+  </script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .menu-container { position: fixed; top: 10px; right: 10px; z-index: 999; }
+    .menu-icon { font-size: 28px; cursor: pointer; padding: 10px; background-color: #333; color: white; border-radius: 6px; }
+    .dropdown { display: none; position: absolute; top: 45px; right: 0; background-color: #f1f1f1; min-width: 200px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 1; border-radius: 6px; }
+    .dropdown a { color: #333; padding: 12px 16px; text-decoration: none; display: block; }
+    .dropdown a:hover { background-color: #ddd; }
+    .section { display: none; padding: 20px; }
+    .section-container { background-color: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background-color: #e0e0e0; }
+    .detail-row { display: none; background-color: #f0f0f0; }
+    input[type="text"], input[type="number"], input[type="file"] { width: 100%; padding: 8px; margin: 8px 0; }
+    button { padding: 8px 14px; background-color: #333; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background-color: #555; }
+    #popupMessageWithdraw, #popupMessageAddBalance {
+      display: none; text-align: center; padding: 10px; border-radius: 5px; margin-top: 10px;
+    }
+    #popupMessageWithdraw { background-color: #ffeb3b; color: #333; border: 1px solid #f1c40f; }
+    #popupMessageAddBalance { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    #addBalanceSuccessMessage, #withdrawSuccessMessage {
+      display: none; padding: 10px; margin-bottom: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="menu-container">
+  <div class="menu-icon" onclick="toggleDropdown()">☰</div>
+  <div class="dropdown" id="menuDropdown">
+    <a href="#" onclick="toggleSection('profileDetailsSection')">Profile Details</a>
+    <a href="#" onclick="toggleSection('addBalanceSection')">Add Balance</a>
+    <a href="#" onclick="toggleSection('withdrawSection')">Withdraw</a>
+    <a href="#" onclick="toggleSection('transactionHistorySection')">Transaction History</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</div>
+
+<!-- Sections -->
+<div class="section" id="profileDetailsSection">
+  <div class="section-container">
+    <h3>Profile Details</h3>
+    <p><strong>Username:</strong> john_doe</p>
+    <p><strong>Phone:</strong> +1234567890</p>
+    <p><strong>Email:</strong> john_doe@example.com</p>
+  </div>
+</div>
+
+<div class="section" id="addBalanceSection">
+  <div class="section-container">
+    <h3>Add Balance</h3>
+    <strong>Current Wallet Balance: ₹<span id="walletBalanceAdd">1000</span></strong>
+    <div id="addBalanceSuccessMessage">Balance added successfully!</div>
+    <div id="popupMessageAddBalance">Your amount will be added to your wallet within 10 to 30 minutes.</div>
+    <form id="addBalanceForm">
+      <label>Amount:</label>
+      <input type="number" id="addAmount" required>
+      <label>Upload Screenshot (.jpg):</label>
+      <input type="file" id="screenshotUpload" accept=".jpg,.jpeg" required>
+      <button type="submit">Add</button>
+    </form>
+    <div id="qrCodeContainer">
+      <p>Scan this QR to pay:</p>
+      <img src="https://via.placeholder.com/150x150.png?text=QR+Code" alt="QR Code" />
+    </div>
+  </div>
+</div>
+
+<div class="section" id="withdrawSection">
+  <div class="section-container">
+    <h3>Withdraw</h3>
+    <strong>Current Wallet Balance: ₹<span id="walletBalanceWithdraw">1000</span></strong><br>
+    <strong>Winning Balance: ₹<span id="winningBalance">1000</span></strong>
+    <div id="withdrawSuccessMessage">Withdrawal request submitted successfully.</div>
+    <form id="withdrawForm">
+      <label>Account Holder Name:</label>
+      <input type="text" id="accountHolder" maxlength="36" required>
+      <label>Account Number:</label>
+      <input type="text" id="accountNumber" pattern="^\d{9,18}$" required>
+      <label>IFSC Code:</label>
+      <input type="text" id="ifscCode" pattern="^[A-Za-z]{4}\d{7}$" required>
+      <label>Amount:</label>
+      <input type="number" id="withdrawAmount" min="100" required>
+      <button type="submit">Withdraw</button>
+    </form>
+  </div>
+</div>
+
+<div class="section" id="transactionHistorySection">
+  <div class="section-container">
+    <h3>Transaction History</h3>
+    <input type="text" id="searchInput" onkeyup="searchTransactions()" placeholder="Search...">
+    <table id="transactionTable">
+      <thead>
+        <tr>
+          <th>Transaction ID</th><th>Type</th><th>Amount</th><th>Balance</th><th>Status</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="transactionTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="popupMessageWithdraw"><strong>Withdrawals will be processed within 10 minutes to 24 hours.</strong></div>
+
+<script>
+  let currentBalance = 1000;
+  let winningBalance = 1000;
+  let dailyAddedAmount = 0;
+  let lastAddDate = new Date().toDateString();
+
+  let dailyWithdrawAmount = 0;
+  let withdrawCountToday = 0;
+  let lastWithdrawDate = new Date().toDateString();
+
+  function toggleDropdown() {
+    const dropdown = document.getElementById("menuDropdown");
+    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+  }
+
+  function toggleSection(id) {
+    const section = document.getElementById(id);
+    const isVisible = section.style.display === "block";
+    document.querySelectorAll(".section").forEach(s => s.style.display = "none");
+    section.style.display = isVisible ? "none" : "block";
+  }
+
+  function updateBalanceDisplays() {
+    document.getElementById("walletBalanceAdd").textContent = currentBalance;
+    document.getElementById("walletBalanceWithdraw").textContent = currentBalance;
+    document.getElementById("winningBalance").textContent = winningBalance;
+  }
+
+  function addTransaction(id, type, amount, balance, status, date, time) {
+    const tbody = document.getElementById("transactionTableBody");
+    const statusColor = { Success: "green", Pending: "orange", Failed: "red" }[status] || "black";
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${id}</td><td>${type}</td><td>₹${amount}</td><td>₹${balance}</td>
+      <td><span style="color: ${statusColor};"><strong>${status}</strong></span></td>
+      <td><button onclick="toggleDetails(this)">▼</button></td>`;
+    const detailRow = document.createElement("tr");
+    detailRow.classList.add("detail-row");
+    detailRow.innerHTML = `<td colspan="6"><strong>Date:</strong> ${date} &nbsp; <strong>Time:</strong> ${time}</td>`;
+    tbody.prepend(detailRow);
+    tbody.prepend(row);
+  }
+
+  document.getElementById("addBalanceForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const today = new Date().toDateString();
+    if (today !== lastAddDate) {
+      dailyAddedAmount = 0;
+      lastAddDate = today;
+    }
+
+    const amount = parseFloat(document.getElementById("addAmount").value);
+    const file = document.getElementById("screenshotUpload").files[0];
+
+    if (amount > 0 && file && file.name.match(/\.(jpg|jpeg)$/i)) {
+      if (dailyAddedAmount + amount > 5000) {
+        alert("You can only add ₹5000 in a single day.");
+        return;
+      }
+      currentBalance += amount;
+      dailyAddedAmount += amount;
+      updateBalanceDisplays();
+      this.reset();
+
+      const now = new Date();
+      addTransaction("TXN" + Date.now(), "Credit", amount, currentBalance, "Pending", now.toISOString().split("T")[0], now.toLocaleTimeString());
+      document.getElementById("addBalanceSuccessMessage").style.display = "block";
+      document.getElementById("popupMessageAddBalance").style.display = "block";
+      setTimeout(() => {
+        document.getElementById("addBalanceSuccessMessage").style.display = "none";
+        document.getElementById("popupMessageAddBalance").style.display = "none";
+      }, 5000);
+    } else {
+      alert("Please enter a valid amount and upload a JPG image.");
+    }
+  });
+
+  document.getElementById("withdrawForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const today = new Date().toDateString();
+    if (today !== lastWithdrawDate) {
+      dailyWithdrawAmount = 0;
+      withdrawCountToday = 0;
+      lastWithdrawDate = today;
+    }
+
+    const amount = parseFloat(document.getElementById("withdrawAmount").value);
+
+    if (amount < 100) {
+      alert("Minimum withdrawal amount is ₹100.");
+      return;
+    }
+
+    if (amount > winningBalance) {
+      alert("Withdrawal exceeds your winning balance.");
+      return;
+    }
+
+    if (withdrawCountToday >= 3) {
+      alert("Only 3 withdrawals allowed per day.");
+      return;
+    }
+
+    if ((dailyWithdrawAmount + amount) > 5000) {
+      alert("Daily withdrawal limit of ₹5000 exceeded.");
+      return;
+    }
+
+    currentBalance -= amount;
+    winningBalance -= amount;
+    dailyWithdrawAmount += amount;
+    withdrawCountToday++;
+
+    updateBalanceDisplays();
+    this.reset();
+
+    const now = new Date();
+    addTransaction("TXN" + Date.now(), "Debit", amount, currentBalance, "Pending", now.toISOString().split("T")[0], now.toLocaleTimeString());
+    document.getElementById("withdrawSuccessMessage").style.display = "block";
+    setTimeout(() => document.getElementById("withdrawSuccessMessage").style.display = "none", 4000);
+    document.getElementById("popupMessageWithdraw").style.display = "block";
+    setTimeout(() => document.getElementById("popupMessageWithdraw").style.display = "none", 5000);
+  });
+
+  function toggleDetails(button) {
+    const row = button.closest("tr");
+    const detailRow = row.nextElementSibling;
+    const isVisible = detailRow.style.display === "table-row";
+    detailRow.style.display = isVisible ? "none" : "table-row";
+    button.textContent = isVisible ? "▼" : "▲";
+  }
+
+  function searchTransactions() {
+    const input = document.getElementById("searchInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#transactionTable tbody tr");
+    for (let i = 0; i < rows.length; i += 2) {
+      const mainRow = rows[i];
+      const detailRow = rows[i + 1];
+      const text = mainRow.textContent.toLowerCase() + detailRow.textContent.toLowerCase();
+      const match = text.includes(input);
+      mainRow.style.display = match ? "" : "none";
+      detailRow.style.display = "none";
+    }
+  }
+
+  function logout() {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = "login.html"; // Adjust path if needed
+  }
+
+  updateBalanceDisplays();
+</script>
+
+</body>
+</html>
