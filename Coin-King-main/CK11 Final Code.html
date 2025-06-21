@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin King</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+    <style>
+        body {
+            background-color: #121212;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .wallet {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: #FFD700;
+            color: #000;
+            font-weight: bold;
+            padding: 12px 15px;
+            border-radius: 25px;
+            box-shadow: 0 0 12px #FFD700;
+            font-size: 15px;
+            z-index: 1000;
+            transition: 0.3s ease;
+            height: auto;
+            line-height: 1.2;
+        }
+        .wallet.win { background: #00c897; color: #fff; box-shadow: 0 0 12px #00c897; }
+        .wallet.lose { background: #ff4444; color: #fff; box-shadow: 0 0 12px #ff4444; }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding-top: 60px;
+            flex-direction: column;
+        }
+        .game-box {
+            background: #1f1f1f;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px #000;
+            text-align: center;
+            width: 360px;
+            max-width: 95%;
+        }
+        .coin {
+            width: 120px;
+            height: 120px;
+            margin: 20px auto;
+            perspective: 1000px;
+        }
+
+        .coin-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .spin {
+            animation: rotateCoin 5s linear;
+        }
+
+        @keyframes rotateCoin {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(7200deg); }
+        }
+
+        .side {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            box-shadow: 0 0 12px #FFD700;
+            color: #000;
+        }
+
+        .king { transform: rotateY(0deg); }
+        .queen { transform: rotateY(180deg); }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .bet-controls button {
+            padding: 10px;
+            width: 40px;
+            font-size: 20px;
+            font-weight: bold;
+            background: #FFD700;
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            margin: 0 8px;
+            cursor: pointer;
+        }
+
+        #bet {
+            background: #fff;
+            color: #000;
+            font-size: 18px;
+            font-weight: bold;
+            width: 100px;
+            text-align: center;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .side-btn {
+            background-color: #333;
+            color: #fff;
+            cursor: pointer;
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease-out; /* Added transitions */
+        }
+
+        .side-btn.selected {
+            background-color: #00c897; /* A distinct green for selected */
+            color: #fff;
+            box-shadow: 0 0 15px rgba(0, 200, 151, 0.8); /* Glow effect */
+            transform: scale(1.05); /* Slightly enlarge when selected */
+        }
+
+        .start-btn {
+            background-color: #00c897;
+            color: #fff;
+            width: 200px;
+            cursor: pointer;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        #result {
+            margin-top: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFD700;
+            display: none;
+        }
+
+        /* Removed #cooldown as it's replaced by game timer */
+
+        .history {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .history ul {
+            padding-left: 20px;
+            list-style: none;
+        }
+
+        .history li.win { color: #00ff99; }
+        .history li.lose { color: #ff6666; }
+
+        /* New styles for King and Queen symbols in history */
+        .king-symbol {
+            color: #28a745; /* Green */
+            font-weight: bold;
+        }
+        .queen-symbol {
+            color: #dc3545; /* Red */
+            font-weight: bold;
+        }
+
+
+        .section {
+            padding: 20px;
+            width: 100%;
+        }
+        .section-container {
+            font-size:15px;
+            background-color: #151515;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            text-align:left;
+            padding: 8px;
+        }
+
+        th {
+            background-color:rgb(45, 37, 37);
+        }
+        .section-container input[type="number"],
+        .section-container input[type="text"],
+        .section-container input[type="file"] {
+            width: calc(100% - 24px); /* Adjust for padding and border */
+            padding: 10px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #555; /* Darker, softer border */
+            border-radius: 6px; /* More rounded corners */
+            box-sizing: border-box;
+            background-color: #222; /* Deeper background */
+            color: #eee; /* Lighter text */
+            font-size: 0.95em;
+        }
+
+        .section-container input:focus {
+            outline: none;
+            border-color: #00bfa5; /* Accent color on focus */
+            box-shadow: 0 0 5px rgba(0, 191, 165, 0.5); /* Subtle glow on focus */
+        }
+
+        .section-container button {
+            background-color: #2e7d32; /* Pleasant green */
+            color: #f0f8ea; /* Light, contrasting text */
+            padding: 12px 18px; /* Slightly larger padding */
+            border: none;
+            border-radius: 6px; /* More rounded corners */
+            cursor: pointer;
+            width: 100%;
+            margin-top: 12px;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+        }
+
+        .section-container button:hover {
+            background-color: #1b5e20; /* Darker shade on hover */
+            transform: scale(1.02); /* Gentle scale on hover */
+        }
+
+        .section-container label {
+            display: block;
+            margin-top: 15px; /* Increased margin */
+            margin-bottom: 6px;
+            color: #b0bec5; /* Softer label color */
+            text-align: left;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        #addBalanceSuccessMessage,
+        #addBalanceErrorMessage { /* Combined styles for success/error messages */
+            text-align: center;
+            margin-top: 15px;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95em;
+            display: none; /* Initially hidden - show with JavaScript */
+        }
+
+        #addBalanceSuccessMessage {
+            background-color: rgba(76, 175, 80, 0.15); /* Light green */
+            color: #2e7d32; /* Darker pleasant green text */
+            border: 1px solid #4caf50; /* Green border */
+        }
+
+        #addBalanceErrorMessage {
+            background-color: rgba(255, 69, 0, 0.15); /* Light orange-red */
+            color: #d32f2f; /* Darker red text */
+            border: 1px solid #ff4500; /* Orange-red border */
+        }
+
+        #withdrawSuccessMessage,
+        #popupMessageWithdraw,
+        #withdrawErrorMessage { /* Added withdrawErrorMessage */
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+            display: none; /* Initially hidden */
+        }
+
+        #withdrawSuccessMessage {
+            background-color: rgba(76, 175, 80, 0.15); /* Light green */
+            color: #4caf50;
+            border: 1px solid #4caf50;
+        }
+
+        #popupMessageWithdraw {
+            background-color: rgba(255, 167, 38, 0.15); /* Light amber */
+            color: #ff9800;
+            border: 1px solid #ff9800;
+        }
+
+        #withdrawErrorMessage { /* New style for withdraw errors */
+            background-color: rgba(255, 69, 0, 0.15);
+            color: #d32f2f;
+            border: 1px solid #ff4500;
+        }
+
+
+        .detail-row td {
+            font-size: 0.9em;
+            background-color: #1c1c1c; /* Slightly darker background */
+            color: #90a4ae;
+            padding: 10px;
+        }
+
+        /* Attractive and Pleasant Menu Details Styles */
+        .offcanvas-header {
+            background-color: #37474f; /* Cool grey header */
+            border-bottom: 1px solid #546e7a;
+            padding: 18px;
+        }
+
+        .offcanvas-title {
+            color: #eceff1 !important; /* Very light grey title */
+            font-size: 1.4em;
+            font-weight: bold;
+            letter-spacing: 0.7px;
+        }
+
+        .offcanvas-body {
+            padding: 25px;
+            background-color: #263238; /* Darker, pleasant background */
+        }
+
+        .offcanvas-body .navbar-nav {
+            margin-bottom: 20px;
+        }
+
+        .offcanvas-body .navbar-nav .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .offcanvas-body .navbar-nav .nav-link {
+            color: #b0bec5 !important; /* Soft blue-grey link color */
+            padding: 12px 18px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .offcanvas-body .navbar-nav .nav-link:hover {
+            background-color: #455a64; /* Slightly lighter grey on hover */
+            color: #fff !important;
+        }
+
+        .offcanvas-body .navbar-nav details {
+            background-color: #37474f; /* Cool grey background for details */
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            border: 1px solid #546e7a; /* Subtle border */
+        }
+
+        .offcanvas-body .navbar-nav summary {
+            color: #cfd8dc !important; /* Light grey summary text */
+            padding: 14px 20px;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+
+        .offcanvas-body .navbar-nav summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .offcanvas-body .navbar-nav summary::after {
+            content: '▾'; /* Down arrow for open/close */
+            font-size: 1em;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .offcanvas-body .navbar-nav details[open] > summary::after {
+            transform: rotate(180deg);
+        }
+
+        .offcanvas-body .navbar-nav summary:hover {
+            background-color: #455a64;
+            color: #fff !important;
+        }
+
+        .offcanvas-body .navbar-nav .section-container {
+            background-color: #455a64; /* Slightly lighter grey for section content */
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .offcanvas-body .navbar-nav .section-container h3 {
+            color: #eceff1;
+            font-size: 1.3em;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #546e7a;
+            padding-bottom: 8px;
+        }
+
+        .offcanvas-body .navbar-nav .section-container p,
+        .offcanvas-body .navbar-nav .section-container strong,
+        .offcanvas-body .navbar-nav .section-container label {
+            color: #b0bec5;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .offcanvas-body .navbar-nav .section-container input[type="number"],
+        .offcanvas-body .navbar-nav .section-container input[type="text"],
+        .offcanvas-body .navbar-nav .section-container input[type="file"] {
+            width: calc(100% - 24px); /* Adjust for padding and border */
+            padding: 10px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #555; /* Darker, softer border */
+            border-radius: 6px; /* More rounded corners */
+            box-sizing: border-box;
+            background-color: #222; /* Deeper background */
+            color: #eee; /* Lighter text */
+            font-size: 0.95em;
+        }
+
+        .section-container input:focus {
+            outline: none;
+            border-color: #00bfa5; /* Accent color on focus */
+            box-shadow: 0 0 5px rgba(0, 191, 165, 0.5); /* Subtle glow on focus */
+        }
+
+        .section-container button {
+            background-color: #2e7d32; /* Pleasant green */
+            color: #f0f8ea;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 12px;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .section-container button:hover {
+            background-color: #1b5e20;
+            transform: scale(1.02);
+        }
+
+        .offcanvas-body .navbar-nav #searchInput {
+            background-color: #37474f;
+            border: 1px solid #546e7a;
+            color: #eceff1;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .offcanvas-body button { /* Logout button style */
+            background-color: #d32f2f; /* Pleasant red */
+            color: #ffebee;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 18px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 18px;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .offcanvas-body button:hover {
+            background-color: #b71c1c;
+            transform: scale(1.02);
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
+        }
+
+        th,
+        td {
+            border: 1px solid #455a64;
+            text-align: left;
+            padding: 12px 15px;
+            font-size: 0.9em;
+        }
+
+        th {
+            background-color: #37474f;
+            color: #eceff1;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #263238;
+        }
+
+        .detail-row td {
+            background-color: #1c1c1c;
+            color: #90a4ae;
+        }
+
+        .table-wrapper-horizontal {
+            overflow-x: auto; /* Enable horizontal scrollbar when content overflows */
+            margin-top: 10px; /* Add some space above the table */
+            border: 1px solid #555; /* Optional: Add a border to the scrollable area */
+            border-radius: 8px;
+        }
+
+        .horizontal-table {
+            width: auto; /* Important: Let the table width expand based on content */
+            border-collapse: collapse;
+            margin-bottom: 10px; /* Add some space below the table */
+        }
+
+        .horizontal-table th,
+        .horizontal-table td {
+            border: 1px solid #455a64; /* Use your theme's border color */
+            text-align: left;
+            padding: 12px 15px;
+            white-space: nowrap; /* Prevent text wrapping, forcing horizontal overflow */
+            font-size: 0.9em;
+        }
+
+        .horizontal-table th {
+            background-color: #37474f; /* Use your theme's header background */
+            color: #eceff1; /* Use your theme's header text color */
+            font-weight: bold;
+        }
+
+        .horizontal-table tr:nth-child(even) {
+            background-color: #263238; /* Use your theme's even row background */
+        }
+
+        /* Optional: Style the scrollbar for WebKit browsers (Chrome, Safari) */
+        .table-wrapper-horizontal::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-wrapper-horizontal::-webkit-scrollbar-thumb {
+            background-color: #666;
+            border-radius: 4px;
+        }
+
+        .table-wrapper-horizontal::-webkit-scrollbar-thumb:hover {
+            background-color: #888;
+        }
+
+        /* Optional: Style the scrollbar for Firefox */
+        .table-wrapper-horizontal {
+            scrollbar-width: thin;
+            scrollbar-color: #666 #333;
+        }
+
+        /* NEW: Styles for the in-page "Balance Added" popup */
+        #balanceAddedOnPagePopup {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stays in place relative to the viewport */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Centers the popup */
+            background-color: rgba(33, 150, 243, 0.95); /* A slightly darker blue with more opacity */
+            color: #fff;
+            padding: 25px 35px; /* More generous padding */
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Stronger shadow */
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em; /* Slightly larger text */
+            z-index: 2000; /* Higher than offcanvas */
+            max-width: 350px; /* Max width for responsiveness */
+            animation: fadeIn 0.3s ease-out; /* Smooth fade-in */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        #balanceAddedOnPagePopup.hidden {
+            animation: fadeOut 0.5s ease-out forwards; /* Smooth fade-out */
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <div class="wallet" id="wallet">Wallet: ₹500<br><small>(Winning: ₹0 | Remaining: ₹500)</small></div>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="offcanvasDarkNavbar" aria-labelledby="offcanvasDarkNavbarLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="offcanvasDarkNavbarLabel">Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+                        <li class="nav-item w-100">
+                            <details>
+                                <summary class="nav-link">profile details</summary>
+                                <div class="section" id="profileDetailsSection">
+                                    <div class="section-container">
+                                        <p><strong>Username:</strong> Sandeep</p>
+                                        <p><strong>Phone:</strong> 7993800177</p>
+                                        <p><strong>Email:</strong> sandy939876@gmail.com</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </li>
+
+                        <li class="nav-item w-100">
+                            <details>
+                                <summary class="nav-link">Add Balance</summary>
+                                <div class="section" id="addBalanceSection">
+                                    <div class="section-container">
+                                        <h3>Add Balance</h3>
+                                        <strong>Current Wallet Balance: ₹<span id="walletBalanceAdd">1000</span></strong>
+                                        <!-- Updated message for admin approval -->
+                                        <div id="addBalanceSuccessMessage">Your request for balance addition has been submitted and is pending admin approval.</div>
+                                        <div id="addBalanceErrorMessage"></div>
+                                        <form id="addBalanceForm">
+                                            <label>Amount:</label>
+                                            <input type="number" id="addAmount" placeholder="Enter amount to add" min="1" required />
+
+                                            <label>Upload Screenshot (.jpg):</label>
+                                            <input type="file" id="screenshotUpload" accept=".jpg,.jpeg" required>
+                                            <button type="submit" id="addBalanceBtn">Add Balance</button>
+                                        </form>
+                                        <div id="qrCodeContainer">
+                                            <p>Scan this QR to pay:</p>
+                                            <img src="https://via.placeholder.com/150x150.png?text=QR+Code" alt="QR Code for payment" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
+                        </li>
+
+                        <li class="nav-item">
+                            <details>
+                                <summary class="nav-link">Withdraw</summary>
+                                <div class="section" id="withdrawSection">
+                                    <div class="section-container">
+                                        <h3>Withdraw</h3>
+                                        <strong>Current Wallet Balance: ₹<span id="walletBalanceWithdraw">500</span></strong><br>
+                                        <strong>Winning Balance: ₹<span id="winningBalance">0</span></strong>
+
+                                        <div id="popupMessageWithdraw">Withdrawals will be processed within 10 minutes to 24 hours.</div>
+                                        <!-- Updated message for withdrawal from winning balance -->
+                                        <div id="withdrawSuccessMessage">Withdrawal request submitted successfully! Funds will be deducted from your winning balance.</div>
+                                        <div id="withdrawErrorMessage"></div>
+                                        <form id="withdrawForm">
+                                            <label>Account Holder Name:</label>
+                                            <input type="text" id="accountHolder" maxlength="36" required>
+                                            <label>Account Number:</label>
+                                            <input type="text" id="accountNumber" pattern="^\d{9,18}$" required>
+                                            <label>IFSC Code:</label>
+                                            <input type="text" id="ifscCode" pattern="^[A-Za-z]{4}\d{7}$" required>
+                                            <label>Amount:</label>
+                                            <input type="number" id="withdrawAmount" min="100" required>
+                                            <button type="submit">Withdraw</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </details>
+                        </li>
+                       <li class="nav-item w-100">
+                            <details>
+                                <summary class="nav-link">Transaction History</summary>
+                                <div class="section" id="transactionHistorySection">
+                                    <div class="section-container">
+                                        <h3>Transaction History</h3>
+                                        <input type="text" id="searchInput" onkeyup="searchTransactions()" placeholder="Search...">
+                                        <div class="table-wrapper-horizontal">
+                                            <table id="transactionTable" class="horizontal-table">
+                                                <thead id="transactionTableHeader">
+                                                    <tr>
+                                                        <th>Transaction ID</th>
+                                                        <th>Type</th>
+                                                        <th>Amount</th>
+                                                        <th>Balance</th>
+                                                        <th>Status</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="transactionTableBody">
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
+                        </li>
+                        <li class="nav-item">
+                            <button onclick="logout()">Logout</button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
+    <div class="container">
+        <div class="game-box">
+            <h1>🪙 COIN KING</h1>
+            <div class="coin">
+                <div class="coin-inner" id="coinInner">
+                    <div class="side king">KING</div>
+                    <div class="side queen">QUEEN</div>
+                </div>
+            </div>
+
+            <div id="result">Result: </div>
+
+            <div class="controls">
+                <div id="game-status" style="margin-top: 15px; font-weight: bold; font-size: 1.1em;">
+                    <p id="gamePhaseDisplay">Phase: Loading...</p>
+                    <p id="gameTimerDisplay">Time Left: --s</p>
+                </div>
+
+                <div class="bet-controls">
+                    <button onclick="changeBet(-10)">−</button>
+                    <input type="text" id="bet" value="100" />
+                    <button onclick="changeBet(10)">+</button>
+                </div>
+                <div>
+                    <!-- Corrected onclick to use 'King' and 'Queen' for selectSide function -->
+                    <button class="side-btn" id="btnKing" onclick="selectSide('King')">KING</button>
+                    <button class="side-btn" id="btnQueen" onclick="selectSide('Queen')">QUEEN</button>
+                </div>
+                <button class="start-btn" onclick="placeBet()" id="startButton">PLACE BET</button>
+            </div>
+
+            <div class="history">
+                <h3>History</h3>
+                <ul id="historyList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Updated popup message for balance addition -->
+    <div id="balanceAddedOnPagePopup">
+        Your request for balance addition has been submitted and is pending admin approval.
+    </div>
+
+    <script>
+        // Global variables for game and wallet balances
+        let totalBalance = 500; // Initial balance for the game
+        let winningBalance = 0; // Initial winning balance
+        let remainingBalance = 500; // Initial remaining balance (total - winning)
+
+        // Variables for daily limits
+        let dailyAddedAmount = 0;
+        let lastAddDate = new Date().toDateString();
+
+        let dailyWithdrawAmount = 0;
+        let withdrawCountToday = 0;
+        let lastWithdrawDate = new Date().toDateString();
+
+        // --- Game Cycle Timing ---
+        let gameInterval; // Holds the setInterval ID for the main game loop
+        let currentPhase = 'initial_cooldown'; // Start in a state before first betting
+        let timeRemainingInPhase = 0; // Seconds left in current phase
+
+        const BETTING_DURATION_SECONDS = 15;
+        const RESULT_DISPLAY_DURATION_SECONDS = 10;
+        const POST_RESULT_COOLDOWN_SECONDS = 25;
+
+        // --- Game State Variables for current round's bet ---
+        let playerBetAmount = 0; // Stores the bet amount for the current round
+        let playerSelectedSide = null; // Stores the side selected for the current round
+        let roundOutcome = null; // Stores the result of the current flip ('KING' or 'QUEEN')
+
+        // --- DOM Elements for the new timer ---
+        const gameTimerDisplay = document.getElementById('gameTimerDisplay');
+        const gamePhaseDisplay = document.getElementById('gamePhaseDisplay');
+
+        // Function to update the main wallet display at the top-left
+        function updateWalletDisplay(extra = '', cssClass = '') {
+            const wallet = document.getElementById('wallet');
+            if (!wallet) {
+                console.error("Error: wallet element not found.");
+                return;
+            }
+            wallet.className = 'wallet ' + cssClass;
+            remainingBalance = totalBalance - winningBalance; // Ensure remainingBalance is always totalBalance - winningBalance
+
+            wallet.innerHTML = `${extra ? extra + ' → ' : ''}Wallet: ₹${totalBalance}
+                <br><small>(Winning: ₹${winningBalance} | Remaining: ₹${remainingBalance})</small>`;
+
+            if (extra) {
+                setTimeout(() => {
+                    wallet.className = 'wallet';
+                    wallet.innerHTML = `Wallet: ₹${totalBalance}
+                        <br><small>(Winning: ₹${winningBalance} | Remaining: ₹${remainingBalance})</small>`;
+                }, 2000); // Reset class after 2 seconds
+            }
+            // Crucially, update the offcanvas balances as well
+            updateBalanceDisplaysInOffcanvas();
+        }
+
+        // Function to update the balances displayed within the offcanvas menu
+        function updateBalanceDisplaysInOffcanvas() {
+            const walletBalanceAdd = document.getElementById('walletBalanceAdd');
+            const walletBalanceWithdraw = document.getElementById('walletBalanceWithdraw');
+            const winningBalanceSpan = document.getElementById('winningBalance');
+
+            if (walletBalanceAdd) walletBalanceAdd.textContent = totalBalance;
+            if (walletBalanceWithdraw) walletBalanceWithdraw.textContent = totalBalance;
+            if (winningBalanceSpan) winningBalanceSpan.textContent = winningBalance;
+        }
+
+        // Initialize wallet display on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateWalletDisplay();
+            updateBalanceDisplaysInOffcanvas();
+            startGameCycle(); // Start the game cycle when the page loads
+        });
+
+        // --- Bet Controls ---
+        function changeBet(amount) {
+            const betInput = document.getElementById('bet');
+            if (!betInput) {
+                console.error("Error: bet input element not found.");
+                return;
+            }
+            let currentBet = parseInt(betInput.value);
+            let newBet = currentBet + amount;
+            if (newBet < 10) newBet = 10; // Minimum bet
+            if (newBet > totalBalance) newBet = totalBalance; // Cannot bet more than total balance
+            betInput.value = newBet;
+        }
+
+        let isBetPlaced = false;
+
+        function selectSide(side) {
+            if (currentPhase !== 'betting') {
+                showMessage("You can only select a side during the betting phase.", "error");
+                return;
+            }
+            if (isBetPlaced) {
+                showMessage("You have already placed your bet for this round.", "error");
+                return;
+            }
+
+            playerSelectedSide = side;
+            
+            // Get references to the buttons and safely remove 'selected' class
+            const btnKing = document.getElementById('btnKing');
+            const btnQueen = document.getElementById('btnQueen');
+
+            if (btnKing) {
+                btnKing.classList.remove('selected');
+            } else {
+                console.error("Error: btnKing element not found in selectSide.");
+            }
+            if (btnQueen) {
+                btnQueen.classList.remove('selected');
+            } else {
+                console.error("Error: btnQueen element not found in selectSide.");
+            }
+
+            // Add 'selected' class to the currently chosen button, with a safety check
+            const selectedBtn = document.getElementById(`btn${side}`); 
+            if (selectedBtn) {
+                selectedBtn.classList.add('selected');
+            } else {
+                console.error(`Error: Button with ID 'btn${side}' not found when trying to select.`);
+            }
+
+            const resultDisplay = document.getElementById('result');
+            if (resultDisplay) {
+                resultDisplay.style.display = 'none';
+            }
+        }
+
+        function placeBet() {
+            if (currentPhase !== 'betting') {
+                showMessage("You can only place a bet during the betting phase.", "error");
+                return;
+            }
+            if (isBetPlaced) {
+                showMessage("You have already placed your bet for this round.", "error");
+                return;
+            }
+            if (!playerSelectedSide) {
+                showMessage("Please select a side (KING or QUEEN) first.", "error");
+                return;
+            }
+
+            const betInput = document.getElementById('bet');
+            if (!betInput) {
+                console.error("Error: bet input element not found in placeBet.");
+                return;
+            }
+            playerBetAmount = parseInt(betInput.value);
+
+            if (isNaN(playerBetAmount) || playerBetAmount <= 0) {
+                showMessage("Please enter a valid bet amount.", "error");
+                return;
+            }
+            if (playerBetAmount > totalBalance) { // Use totalBalance here for the actual deduction
+                showMessage("You do not have enough balance to place this bet.", "error");
+                return;
+            }
+
+            // Deduct bet immediately from total balance
+            totalBalance -= playerBetAmount;
+            remainingBalance = totalBalance - winningBalance; // Recalculate remaining
+            updateWalletDisplay(`Bet: ₹${playerBetAmount}`);
+            isBetPlaced = true;
+            showMessage(`Bet of ₹${playerBetAmount} placed on ${playerSelectedSide}. Waiting for result...`, 'info');
+            
+            const startButton = document.getElementById('startButton');
+            const btnKing = document.getElementById('btnKing');
+            const btnQueen = document.getElementById('btnQueen');
+            const betControlMinus = document.querySelector('.bet-controls button:first-child');
+            const betControlPlus = document.querySelector('.bet-controls button:last-child');
+
+            if (startButton) startButton.disabled = true; // Disable betting button
+            if (btnKing) btnKing.disabled = true;
+            if (btnQueen) btnQueen.disabled = true;
+            if (betInput) betInput.disabled = true;
+            if (betControlMinus) betControlMinus.disabled = true;
+            if (betControlPlus) betControlPlus.disabled = true;
+        }
+
+        // --- Coin Flip Logic ---
+
+        /**
+         * Determines the winning side based on the lowest total bet.
+         * If total bets are equal, a random side is chosen.
+         * @param {object} bets - An object containing arrays of bets for KING and QUEEN.
+         * Example: { KING: [{amount: 100, isPlayer: true}], QUEEN: [{amount: 200, isPlayer: false}] }
+         * @returns {string} The winning side ('KING' or 'QUEEN').
+         */
+        function determineWinningSide(bets) {
+            const totalKing = bets.KING.reduce((sum, bet) => sum + bet.amount, 0);
+            const totalQueen = bets.QUEEN.reduce((sum, bet) => sum + bet.amount, 0);
+
+            let winningSide;
+            let reasonDetail = `King Total: ₹${totalKing}, Queen Total: ₹${totalQueen}. `;
+
+            if (totalKing < totalQueen) {
+                winningSide = 'KING';
+                reasonDetail += `King had the lowest total bet.`;
+            } else if (totalQueen < totalKing) {
+                winningSide = 'QUEEN';
+                reasonDetail += `Queen had the lowest total bet.`;
+            } else {
+                winningSide = Math.random() < 0.5 ? 'KING' : 'QUEEN';
+                reasonDetail += `Total bets were equal. Winner chosen randomly as ${winningSide}.`;
+            }
+
+            console.log(`Winning Logic: ${reasonDetail}`);
+            return winningSide;
+        }
+
+
+        function flipCoin() {
+            const coinInner = document.getElementById('coinInner');
+            if (!coinInner) {
+                console.error("Error: coinInner element not found in flipCoin.");
+                return;
+            }
+            coinInner.classList.remove('spin');
+            // Force reflow to re-apply animation
+            void coinInner.offsetWidth;
+            coinInner.classList.add('spin');
+
+            // Simulate other player bets for this round
+            const otherPlayerBetsKing = Array.from({ length: Math.floor(Math.random() * 3) + 1 }, () => ({
+                amount: (Math.floor(Math.random() * 5) + 1) * 100, // Random amounts like 100, 200, 300, 400, 500
+                isPlayer: false
+            }));
+            const otherPlayerBetsQueen = Array.from({ length: Math.floor(Math.random() * 3) + 1 }, () => ({
+                amount: (Math.floor(Math.random() * 5) + 1) * 100,
+                isPlayer: false
+            }));
+
+            // Construct the current round's full bet data
+            const currentRoundAllBets = {
+                KING: [...otherPlayerBetsKing],
+                QUEEN: [...otherPlayerBetsQueen]
+            };
+
+            // Add player's bet if one was placed
+            if (isBetPlaced && playerSelectedSide) { // Ensure playerSelectedSide is not null
+                // Use .toUpperCase() when accessing object keys if they are consistently uppercase
+                currentRoundAllBets[playerSelectedSide.toUpperCase()].push({ amount: playerBetAmount, isPlayer: true }); 
+            }
+
+            // Determine the outcome using the new logic
+            roundOutcome = determineWinningSide(currentRoundAllBets);
+
+            let rotationY = 0;
+            if (roundOutcome === 'KING') {
+                rotationY = 7200; // Ends on KING side
+            } else {
+                rotationY = 7200 + 180; // Ends on QUEEN side
+            }
+            coinInner.style.transform = `rotateY(${rotationY}deg)`;
+
+            // Wait for the animation to complete before showing result
+            setTimeout(() => {
+                showFlipResult(roundOutcome);
+            }, 5000); // Matches the 5s animation duration
+        }
+
+        function showFlipResult(result) {
+            const resultDisplay = document.getElementById('result');
+            const historyList = document.getElementById('historyList');
+            if (!historyList) {
+                console.error("Error: historyList element not found in showFlipResult.");
+                return;
+            }
+
+            let message = `Result: ${result}!`;
+            let cssClass = '';
+            let listItemClass = '';
+
+            // Mapping for symbols with styling
+            const selectedSideSymbolHtml = playerSelectedSide === 'King' ? '<span class="king-symbol">♚</span>' : '<span class="queen-symbol">♛</span>';
+            const resultSideSymbolHtml = result === 'KING' ? '<span class="king-symbol">♚</span>' : '<span class="queen-symbol">♛</span>';
+
+
+            // Ensure playerSelectedSide (which is 'King' or 'Queen') is compared correctly
+            if (isBetPlaced && playerSelectedSide && playerSelectedSide.toUpperCase() === result.toUpperCase()) {
+                const winnings = playerBetAmount * 2;
+                totalBalance += winnings;
+                winningBalance += (winnings - playerBetAmount); // Only the profit contributes to winning balance
+                message += ' You WON!';
+                cssClass = 'win';
+                listItemClass = 'win';
+            } else if (isBetPlaced && playerSelectedSide && playerSelectedSide.toUpperCase() !== result.toUpperCase()) {
+                message += ' You LOST!';
+                cssClass = 'lose';
+                listItemClass = 'lose';
+            } else {
+                // If no bet was placed by the player, only show message, but don't add to main history
+                showMessage(message, 'info'); // Still show general result message
+                // Do not proceed to add to historyList or transactions array if no bet was placed
+                // Reset for next round and return early
+                playerBetAmount = 0;
+                playerSelectedSide = null;
+                isBetPlaced = false;
+                
+                const btnKing = document.getElementById('btnKing');
+                const btnQueen = document.getElementById('btnQueen');
+                if (btnKing) btnKing.classList.remove('selected');
+                if (btnQueen) btnQueen.classList.remove('selected');
+                return; // Exit the function if no bet was placed
+            }
+
+            // Only add to historyList if a bet was actually placed by the customer.
+            if (isBetPlaced) { 
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `Round: Bet ${playerBetAmount > 0 ? playerBetAmount : 'N/A'} on ${playerSelectedSide ? selectedSideSymbolHtml : 'N/A'}, Result: ${resultSideSymbolHtml}. ${isBetPlaced ? (playerSelectedSide && playerSelectedSide.toUpperCase() === result.toUpperCase() ? 'Won' : 'Lost') : 'No Bet'}. Current Wallet: ₹${totalBalance}`;
+                
+                if (listItemClass) { 
+                    listItem.classList.add(listItemClass);
+                }
+                historyList.prepend(listItem); // Add to the top of the list
+
+                // Keep only the last 10 entries in the immediate game history list
+                while (historyList.children.length > 10) {
+                    historyList.removeChild(historyList.lastChild);
+                }
+            }
+
+
+            updateWalletDisplay(isBetPlaced ? (playerSelectedSide && playerSelectedSide.toUpperCase() === result.toUpperCase() ? 'WIN!' : 'LOSE!') : '', isBetPlaced ? (playerSelectedSide && playerSelectedSide.toUpperCase() === result.toUpperCase() ? 'win' : 'lose') : '');
+
+            // Add game result to the main transactions array for history table
+            // This is for the *offcanvas* Transaction History, which already filters by game types.
+            // This transaction is only added if a bet was placed (due to the `if (isBetPlaced)` block above)
+            addTransaction({
+                id: generateTransactionID(),
+                type: isBetPlaced ? (playerSelectedSide.toUpperCase() === result.toUpperCase() ? 'Game Win' : 'Game Bet') : 'Game Info', // This line is now effectively inside an isBetPlaced check
+                amount: playerBetAmount > 0 ? playerBetAmount : 0,
+                balance: totalBalance, // Balance after this round
+                status: isBetPlaced ? (playerSelectedSide.toUpperCase() === result.toUpperCase() ? 'Completed (Win)' : 'Completed (Loss)') : 'Completed',
+                action: ''
+            });
+
+            // Reset for next round
+            playerBetAmount = 0;
+            playerSelectedSide = null;
+            isBetPlaced = false;
+            
+            const btnKing = document.getElementById('btnKing');
+            const btnQueen = document.getElementById('btnQueen');
+            if (btnKing) {
+                btnKing.classList.remove('selected');
+            }
+            if (btnQueen) {
+                btnQueen.classList.remove('selected');
+            }
+        }
+
+        function showMessage(msg, type = "info") {
+            const resultDisplay = document.getElementById('result');
+            if (!resultDisplay) {
+                console.error("Error: resultDisplay element not found in showMessage.");
+                return;
+            }
+            resultDisplay.textContent = `${type === "error" ? 'Error: ' : ''}${msg}`;
+            resultDisplay.style.display = 'block';
+            if (type === "win") {
+                resultDisplay.style.color = '#00ff99';
+            } else if (type === "lose" || type === "error") {
+                resultDisplay.style.color = '#ff6666';
+            } else { // info
+                resultDisplay.style.color = '#FFD700';
+            }
+        }
+
+        function clearMessage() {
+            const resultDisplay = document.getElementById('result');
+            if (resultDisplay) {
+                resultDisplay.style.display = 'none';
+            } else {
+                console.error("Error: resultDisplay element not found in clearMessage.");
+            }
+        }
+
+        // --- Game Cycle Management ---
+        function startGameCycle() {
+            clearInterval(gameInterval); // Clear any existing interval
+            timeRemainingInPhase = POST_RESULT_COOLDOWN_SECONDS; // Start with the cooldown before betting begins
+            currentPhase = 'initial_cooldown';
+            updateGameStatusDisplay();
+            disableControls(true); // Ensure controls are disabled at start
+            clearMessage();
+            const coinInner = document.getElementById('coinInner');
+            if (coinInner) {
+                coinInner.style.transform = 'rotateY(0deg)'; // Reset coin orientation
+            } else {
+                console.error("Error: coinInner element not found in startGameCycle.");
+            }
+
+            gameInterval = setInterval(() => {
+                timeRemainingInPhase--;
+
+                if (timeRemainingInPhase <= 0) {
+                    handlePhaseChange();
+                }
+                updateGameStatusDisplay();
+            }, 1000);
+        }
+
+        function handlePhaseChange() {
+            switch (currentPhase) {
+                case 'initial_cooldown':
+                case 'cooldown': // After a round ends, go to betting phase
+                    currentPhase = 'betting';
+                    timeRemainingInPhase = BETTING_DURATION_SECONDS;
+                    disableControls(false); // Enable controls for betting
+                    showMessage("Place your bets!", "info");
+                    break;
+                case 'betting':
+                    currentPhase = 'flipping';
+                    timeRemainingInPhase = 5; // Coin flip animation duration
+                    disableControls(true); // Disable controls during flip
+                    showMessage("No more bets! Flipping coin...", "info");
+                    flipCoin();
+                    break;
+                case 'flipping':
+                    currentPhase = 'display_result';
+                    timeRemainingInPhase = RESULT_DISPLAY_DURATION_SECONDS - 5; // Display result for remaining time after flip
+                    // showFlipResult already called by flipCoin's setTimeout
+                    break;
+                case 'display_result':
+                    currentPhase = 'cooldown';
+                    timeRemainingInPhase = POST_RESULT_COOLDOWN_SECONDS;
+                    clearMessage(); // Clear result message after display
+                    const coinInner = document.getElementById('coinInner');
+                    if (coinInner) {
+                        coinInner.style.transform = 'rotateY(0deg)'; // Reset coin for next round
+                    } else {
+                        console.error("Error: coinInner element not found in handlePhaseChange (display_result).");
+                    }
+                    break;
+            }
+        }
+
+        function updateGameStatusDisplay() {
+            let phaseText = '';
+            switch (currentPhase) {
+                case 'initial_cooldown':
+                    phaseText = 'Game starting soon!';
+                    break;
+                case 'betting':
+                    phaseText = 'Place your bets!';
+                    break;
+                case 'flipping':
+                    phaseText = 'Coin is flipping!';
+                    break;
+                case 'display_result':
+                    phaseText = 'Results are in!';
+                    break;
+                case 'cooldown':
+                    phaseText = 'Next round soon!';
+                    break;
+            }
+            if (gamePhaseDisplay) {
+                gamePhaseDisplay.textContent = `Phase: ${phaseText}`;
+            } else {
+                console.error("Error: gamePhaseDisplay element not found in updateGameStatusDisplay.");
+            }
+            
+            if (gameTimerDisplay) {
+                gameTimerDisplay.textContent = `Time Left: ${timeRemainingInPhase}s`;
+            } else {
+                console.error("Error: gameTimerDisplay element not found in updateGameStatusDisplay.");
+            }
+        }
+
+        function disableControls(disable) {
+            const betInput = document.getElementById('bet');
+            const btnKing = document.getElementById('btnKing');
+            const btnQueen = document.getElementById('btnQueen');
+            const startButton = document.getElementById('startButton');
+            const betControlMinus = document.querySelector('.bet-controls button:first-child');
+            const betControlPlus = document.querySelector('.bet-controls button:last-child');
+
+            if (betInput) betInput.disabled = disable; else console.error("Error: betInput element not found in disableControls.");
+            if (btnKing) btnKing.disabled = disable; else console.error("Error: btnKing element not found in disableControls.");
+            if (btnQueen) btnQueen.disabled = disable; else console.error("Error: btnQueen element not found in disableControls.");
+            if (startButton) startButton.disabled = disable; else console.error("Error: startButton element not found in disableControls.");
+            if (betControlMinus) betControlMinus.disabled = disable; else console.error("Error: betControlMinus element not found in disableControls.");
+            if (betControlPlus) betControlPlus.disabled = disable; else console.error("Error: betControlPlus element not found in disableControls.");
+        }
+
+        // --- Add Balance Section ---
+        document.getElementById('addBalanceForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const addAmountInput = document.getElementById('addAmount');
+            const screenshotUpload = document.getElementById('screenshotUpload');
+            const amountToAdd = parseInt(addAmountInput.value);
+            const addSuccessMessage = document.getElementById('addBalanceSuccessMessage');
+            const addErrorMessage = document.getElementById('addBalanceErrorMessage');
+
+            // Reset messages
+            if (addSuccessMessage) addSuccessMessage.style.display = 'none';
+            if (addErrorMessage) {
+                addErrorMessage.style.display = 'none';
+                addErrorMessage.textContent = '';
+            }
+
+            // Check if it's a new day for daily limits
+            const today = new Date().toDateString();
+            if (today !== lastAddDate) {
+                dailyAddedAmount = 0;
+                lastAddDate = today;
+            }
+
+            const MIN_ADD_AMOUNT = 100;
+            const MAX_ADD_AMOUNT = 5000;
+            const MAX_DAILY_ADD_AMOUNT = 10000; // Example daily limit
+
+            if (isNaN(amountToAdd) || amountToAdd < MIN_ADD_AMOUNT || amountToAdd > MAX_ADD_AMOUNT) {
+                if (addErrorMessage) {
+                    addErrorMessage.textContent = `Please enter an amount between ₹${MIN_ADD_AMOUNT} and ₹${MAX_ADD_AMOUNT}.`;
+                    addErrorMessage.style.display = 'block';
+                }
+                return;
+            }
+
+            if (dailyAddedAmount + amountToAdd > MAX_DAILY_ADD_AMOUNT) {
+                if (addErrorMessage) {
+                    addErrorMessage.textContent = `Daily add limit of ₹${MAX_DAILY_ADD_AMOUNT} exceeded. You have added ₹${dailyAddedAmount} today.`;
+                    addErrorMessage.style.display = 'block';
+                }
+                return;
+            }
+
+            if (!screenshotUpload.files[0]) {
+                if (addErrorMessage) {
+                    addErrorMessage.textContent = 'Please upload a JPG/JPEG screenshot.';
+                    addErrorMessage.style.display = 'block';
+                }
+                return;
+            }
+
+            const file = screenshotUpload.files[0];
+            if (!file.name.match(/\.(jpg|jpeg)$/i)) {
+                if (addErrorMessage) {
+                    addErrorMessage.textContent = "Please upload a JPG/JPEG screenshot.";
+                    addErrorMessage.style.display = "block";
+                }
+                return;
+            }
+
+            // Simulate server request: NO DIRECT BALANCE UPDATE HERE
+            console.log(`Request to add ₹${amountToAdd} with screenshot: ${file.name} submitted for admin approval.`);
+
+            dailyAddedAmount += amountToAdd; // Still track for daily request limit
+
+            // Show a success message indicating pending approval
+            if (addSuccessMessage) {
+                addSuccessMessage.textContent = 'Your request for balance addition has been submitted and is pending admin approval.';
+                addSuccessMessage.style.display = 'block';
+            }
+            
+            // Show the floating popup with the updated message
+            const popup = document.getElementById('balanceAddedOnPagePopup');
+            if (popup) {
+                popup.textContent = 'Your request for balance addition has been submitted and is pending admin approval.'; // Ensure popup message is also updated
+                popup.style.display = 'block';
+                popup.classList.remove('hidden');
+
+                setTimeout(() => {
+                    popup.classList.add('hidden');
+                    setTimeout(() => {
+                        popup.style.display = 'none';
+                    }, 500);
+                }, 3000);
+            }
+
+
+            // Add to transaction history as pending
+            addTransaction({
+                id: generateTransactionID(),
+                type: 'Deposit Request', // Changed type to reflect it's a request
+                amount: amountToAdd,
+                balance: totalBalance, // Balance remains unchanged at the time of request
+                status: 'Pending',
+                action: '<button onclick="alert(\'Viewing screenshot...\')">View</button>'
+            });
+
+
+            // Clear form
+            if (addAmountInput) addAmountInput.value = '';
+            if (screenshotUpload) screenshotUpload.value = ''; // Clear file input
+            updateWalletDisplay(); // Update wallet display (it won't show the added money until admin approval)
+        });
+
+        // --- Withdraw Section ---
+        document.getElementById('withdrawForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const accountHolderInput = document.getElementById('accountHolder');
+            const accountNumberInput = document.getElementById('accountNumber');
+            const ifscCodeInput = document.getElementById('ifscCode');
+            const withdrawAmountInput = document.getElementById('withdrawAmount');
+
+            const accountHolder = accountHolderInput ? accountHolderInput.value.trim() : '';
+            const accountNumber = accountNumberInput ? accountNumberInput.value.trim() : '';
+            const ifscCode = ifscCodeInput ? ifscCodeInput.value.trim().toUpperCase() : '';
+            const withdrawAmount = withdrawAmountInput ? parseInt(withdrawAmountInput.value) : 0;
+
+
+            const withdrawSuccessMessage = document.getElementById('withdrawSuccessMessage');
+            const withdrawErrorMessage = document.getElementById('withdrawErrorMessage');
+            const popupMessageWithdraw = document.getElementById('popupMessageWithdraw');
+
+            // Reset messages
+            if (withdrawSuccessMessage) withdrawSuccessMessage.style.display = 'none';
+            if (withdrawErrorMessage) {
+                withdrawErrorMessage.style.display = 'none';
+                withdrawErrorMessage.textContent = '';
+            }
+            if (popupMessageWithdraw) popupMessageWithdraw.style.display = 'block'; // Always show processing time message for withdrawals
+
+            // Check if it's a new day for daily limits
+            const today = new Date().toDateString();
+            if (today !== lastWithdrawDate) {
+                dailyWithdrawAmount = 0;
+                withdrawCountToday = 0;
+                lastWithdrawDate = today;
+            }
+
+            const MIN_WITHDRAW_AMOUNT = 100;
+            const MAX_DAILY_WITHDRAW_AMOUNT = 5000;
+            const MAX_DAILY_WITHDRAW_COUNT = 3;
+
+            // Validation
+            if (isNaN(withdrawAmount) || withdrawAmount < MIN_WITHDRAW_AMOUNT) {
+                if (withdrawErrorMessage) {
+                    withdrawErrorMessage.textContent = `Minimum withdrawal amount is ₹${MIN_WITHDRAW_AMOUNT}.`;
+                    withdrawErrorMessage.style.display = 'block';
+                }
+                return;
+            }
+            // MODIFIED: Check against winningBalance only
+            if (withdrawAmount > winningBalance) {
+                if (withdrawErrorMessage) {
+                    withdrawErrorMessage.textContent = 'Insufficient winning balance for this withdrawal.';
+                    withdrawErrorMessage.style.display = 'block';
+                }
+                return;
+            }
+
+            if (dailyWithdrawAmount + withdrawAmount > MAX_DAILY_WITHDRAW_AMOUNT) {
+                if (withdrawErrorMessage) {
+                    withdrawErrorMessage.textContent = `Daily withdrawal limit of ₹${MAX_DAILY_WITHDRAW_AMOUNT} exceeded. You have withdrawn ₹${dailyWithdrawAmount} today.`;
+                    withdrawErrorMessage.style.display = 'block';
+                }
+                return;
+            }
+            if (withdrawCountToday >= MAX_DAILY_WITHDRAW_COUNT) {
+                if (withdrawErrorMessage) {
+                    withdrawErrorMessage.textContent = `You have reached your daily withdrawal request limit (${MAX_DAILY_WITHDRAW_COUNT}).`;
+                    withdrawErrorMessage.style.display = 'block';
+                }
+                return;
+            }
+            if (!accountHolder || !accountNumber || !ifscCode) {
+                if (withdrawErrorMessage) {
+                    withdrawErrorMessage.textContent = 'Please fill in all account details.';
+                    withdrawErrorMessage.style.display = 'block';
+                }
+                return;
+            }
+            if (!/^\d{9,18}$/.test(accountNumber)) {
+                if (withdrawErrorMessage) {
+                    withdrawErrorMessage.textContent = 'Account Number must be between 9 and 18 digits.';
+                    withdrawErrorMessage.style.display = 'block';
+                }
+                return;
+            }
+            if (!/^[A-Za-z]{4}\d{7}$/.test(ifscCode)) {
+                if (withdrawErrorMessage) {
+                    withdrawErrorMessage.textContent = 'IFSC Code format is invalid (e.g., ABCD0123456).';
+                    withdrawErrorMessage.style.display = 'block';
+                }
+                return;
+            }
+
+            // MODIFIED: Deduct ONLY from winningBalance
+            winningBalance -= withdrawAmount;
+            totalBalance = remainingBalance + winningBalance; // Update total balance based on new winning balance
+            console.log(`Withdrawal Trace: ₹${withdrawAmount} deducted entirely from Winning Balance.`);
+
+            dailyWithdrawAmount += withdrawAmount;
+            withdrawCountToday++;
+
+            if (withdrawSuccessMessage) {
+                withdrawSuccessMessage.textContent = `Withdrawal request submitted successfully! ₹${withdrawAmount} deducted from your winning balance.`;
+                withdrawSuccessMessage.style.display = 'block';
+            }
+            if (popupMessageWithdraw) popupMessageWithdraw.style.display = 'block'; // Show the withdrawal processing message
+            updateWalletDisplay(); // Update main wallet and offcanvas balances
+
+            // Add to transaction history
+            addTransaction({
+                id: generateTransactionID(),
+                type: 'Withdrawal',
+                amount: withdrawAmount,
+                balance: totalBalance,
+                status: 'Pending',
+                action: '' // No action for withdrawals in this simple example
+            });
+
+            // Clear form
+            if (withdrawAmountInput) withdrawAmountInput.value = '';
+            if (accountHolderInput) accountHolderInput.value = '';
+            if (accountNumberInput) accountNumberInput.value = '';
+            if (ifscCodeInput) ifscCodeInput.value = '';
+
+            setTimeout(() => {
+                if (withdrawSuccessMessage) withdrawSuccessMessage.style.display = 'none';
+                if (popupMessageWithdraw) popupMessageWithdraw.style.display = 'none';
+            }, 5000); // Hide success message and popup after 5 seconds
+        });
+
+
+        // --- Transaction History ---
+        let transactions = [
+            { id: 'TXN001', type: 'Deposit Request', amount: 500, balance: 500, status: 'Completed', action: '' },
+            { id: 'TXN002', type: 'Game Bet', amount: 100, balance: 400, status: 'Completed', action: '' },
+            { id: 'TXN003', type: 'Game Win', amount: 200, balance: 600, status: 'Completed', action: '' },
+        ]; // Array to store transaction objects
+
+        function generateTransactionID() {
+            return 'TRX' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000);
+        }
+
+        function addTransaction(transaction) {
+            transactions.unshift(transaction); // Add to the beginning of the array
+            renderTransactions(); // Re-render table after adding a new transaction
+        }
+
+        function renderTransactions(filtered = transactions) {
+            const tableBody = document.getElementById('transactionTableBody');
+            if (!tableBody) {
+                console.error("Error: transactionTableBody element not found in renderTransactions.");
+                return;
+            }
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            // Filter for deposit and withdrawal requests
+            const relevantTransactions = transactions.filter(tx => 
+                tx.type === 'Deposit Request' || tx.type === 'Withdrawal'
+            ).slice(0, 10); // Take the first 10, as they are added to the beginning (unshift)
+
+            if (relevantTransactions.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No transaction history found.</td></tr>';
+                return;
+            }
+
+            relevantTransactions.forEach(tx => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = tx.id;
+                row.insertCell().textContent = tx.type;
+                row.insertCell().textContent = `₹${tx.amount}`;
+                row.insertCell().textContent = `₹${tx.balance}`;
+                row.insertCell().textContent = tx.status;
+
+                const actionCell = row.insertCell();
+                if (tx.status.includes('Pending') || tx.status.includes('Processing')) {
+                    const cancelButton = document.createElement('button');
+                    cancelButton.textContent = 'Cancel';
+                    cancelButton.style.cssText = `
+                        background-color: #f44336;
+                        color: #fff;
+                        border: none;
+                        padding: 5px 10px;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        width: auto;
+                        margin-top: 0;
+                    `;
+                    cancelButton.onclick = () => cancelTransaction(tx.id);
+                    actionCell.appendChild(cancelButton);
+                } else if (tx.action) {
+                    actionCell.innerHTML = tx.action;
+                } else {
+                    actionCell.textContent = 'N/A';
+                }
+            });
+        }
+
+        function cancelTransaction(transactionId) {
+            const transactionIndex = transactions.findIndex(t => t.id === transactionId);
+            if (transactionIndex > -1) {
+                const transaction = transactions[transactionIndex];
+                if (transaction.status.includes('Pending') || transaction.status.includes('Processing') || transaction.type === 'Deposit Request') { // Allow cancelling deposit requests too
+                    console.log(`Transaction ${transactionId} cancelled.`);
+                    transaction.status = 'Cancelled';
+                    renderTransactions(); // Re-render table to show updated status
+                    
+                    // If it was a pending withdrawal, return funds to winning balance
+                    if (transaction.type === 'Withdrawal' && !transaction.status.includes('Completed')) {
+                         winningBalance += transaction.amount;
+                         totalBalance = remainingBalance + winningBalance;
+                         updateWalletDisplay();
+                    } else if (transaction.type === 'Deposit Request' && !transaction.status.includes('Completed')) {
+                        // For deposit requests, since money isn't added until admin approves, no funds to return.
+                        // But we might want to clean up daily limits if it was counted towards them.
+                        console.log(`Deposit Request ${transactionId} cancelled. No funds to return as they were never credited.`);
+                    }
+
+                    showMessage(`Transaction ${transactionId} has been cancelled.`, 'info');
+                } else {
+                    showMessage(`Transaction ${transactionId} cannot be cancelled as its status is ${transaction.status}.`, 'error');
+                }
+            } else {
+                showMessage(`Transaction ${transactionId} not found.`, 'error');
+            }
+        }
+
+        function searchTransactions() {
+            const input = document.getElementById('searchInput');
+            if (!input) {
+                console.error("Error: searchInput element not found in searchTransactions.");
+                return;
+            }
+            const filter = input.value.toLowerCase();
+            
+            // Filter for deposit and withdrawal requests, then apply search filter
+            const relevantTransactions = transactions.filter(tx => 
+                tx.type === 'Deposit Request' || tx.type === 'Withdrawal'
+            );
+
+            const filteredRelevantTransactions = relevantTransactions.filter(tx =>
+                tx.id.toLowerCase().includes(filter) ||
+                tx.type.toLowerCase().includes(filter) ||
+                tx.status.toLowerCase().includes(filter) ||
+                tx.amount.toString().includes(filter)
+            ).slice(0, 10); // Still take only the last 10 after searching
+
+            renderTransactions(filteredRelevantTransactions); // Pass the filtered list to render
+        }
+
+        function logout() {
+            console.log('User logged out.');
+            // In a real application, you'd also send a request to your server to invalidate the session.
+            // For this example, we'll just clear local storage and reload.
+            localStorage.clear();
+            sessionStorage.clear();
+            // window.location.href = "login.html"; // Redirect to your login page if you have one
+            window.location.reload(); // Simple reload for this example
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>
